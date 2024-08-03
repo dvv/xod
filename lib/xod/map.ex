@@ -39,6 +39,10 @@ defmodule Xod.Map do
       Enum.into(X.Common.kv_from_list(l), %{})
     end
 
+    defp has_key?(m, a) do
+      Map.has_key?(m, a) or Map.has_key?(m, to_string(a))
+    end
+
     defp get_key(m, a) do
       Map.get(m, a, Map.get(m, to_string(a)))
     end
@@ -60,6 +64,7 @@ defmodule Xod.Map do
     @impl true
     def parse(schema, map, path) do
       map = if(is_list(map), do: from_list(map), else: map)
+      has? = if(schema.key_coerce, do: &has_key?/2, else: &Map.has_key?/2)
       get = if(schema.key_coerce, do: &get_key/2, else: &Map.get/2)
       drop = if(schema.key_coerce, do: &del_key/2, else: &Map.drop(&1, [&2]))
 
@@ -68,7 +73,15 @@ defmodule Xod.Map do
           schema.keyval,
           {%{}, map, []},
           fn {key, schema}, {parsed, mapLeft, errors} ->
-            res = X.Schema.parse(schema, get.(mapLeft, key), List.insert_at(path, -1, key))
+            value = get.(mapLeft, key)
+            res = case schema do
+              %Xod.Optional{schema: schema} ->
+                case has?.(mapLeft, key) do
+                  true -> X.Schema.parse(schema, value, List.insert_at(path, -1, key))
+                  false -> :skip
+                end
+              _ -> X.Schema.parse(schema, value, List.insert_at(path, -1, key))
+            end
 
             case res do
               {:error, err} ->
@@ -76,6 +89,9 @@ defmodule Xod.Map do
 
               {:ok, val} ->
                 {Map.put(parsed, key, val), drop.(mapLeft, key), errors}
+
+              :skip ->
+                {parsed, mapLeft, errors}
             end
           end
         )

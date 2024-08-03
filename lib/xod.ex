@@ -1,10 +1,10 @@
 defmodule Xod do
-  @moduledoc File.read!('README.md')
+  @moduledoc File.read!("README.md")
 
   @doc """
   Parses and validates `value` using the provided `schema`
 
-  On success, returns `{:ok, value}` with the parsed value. 
+  On success, returns `{:ok, value}` with the parsed value.
   On error, returns `{:error, error}` where `error` is a `Xod.XodError`
   """
   @spec parse(Xod.Schema.t(), term()) :: Xod.Common.result(term())
@@ -45,7 +45,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.string(), "foo bar"
       {:ok, "foo bar"}
-      
+
       iex> Xod.parse! Xod.string(), 13.0
       ** (Xod.XodError) Expected string, got number (in path [])
   """
@@ -69,7 +69,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.number(), 175.3
       {:ok, 175.3}
-      
+
       iex> Xod.parse! Xod.number(), nil
       ** (Xod.XodError) Expected number, got nil (in path [])
   """
@@ -86,7 +86,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.boolean(), true
       {:ok, true}
-      
+
       iex> Xod.parse! Xod.boolean(), {3.0, "abc"}
       ** (Xod.XodError) Expected boolean, got tuple (in path [])
   """
@@ -105,10 +105,10 @@ defmodule Xod do
 
       iex> Xod.parse Xod.tuple({Xod.number(), Xod.number()}), {5, 8}
       {:ok, {5, 8}}
-      
+
       iex> Xod.parse! Xod.tuple({Xod.number(), Xod.number()}), %{0 => 5, 1 => 8}
       ** (Xod.XodError) Expected tuple, got map (in path [])
-      
+
       iex> Xod.parse! Xod.tuple({Xod.number(), Xod.number()}), {1, []}
       ** (Xod.XodError) Expected number, got list (in path [1])
   """
@@ -133,7 +133,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.list(Xod.tuple({Xod.string(), Xod.number()})), [{"a", 13.0}]
       {:ok, [{"a", 13.0}]}
-      
+
       iex> Xod.parse! Xod.list(Xod.number()), [[], %{}]
       ** (Xod.XodError) Expected number, got list (in path [0])
       Expected number, got map (in path [1])
@@ -150,7 +150,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.keyword([x: Xod.number()]), [x: 13.0]
       {:ok, [x: 13.0]}
-      
+
       iex> Xod.parse! Xod.keyword([{0, Xod.number()}]), ["abc"]
       ** (Xod.XodError) Expected number, got string (in path [0])
   """
@@ -188,7 +188,7 @@ defmodule Xod do
       ...>   Xod.map(%{my_key: Xod.number(), other: Xod.string()}, key_coerce: true),
       ...>   %{"my_key" => 13, other: "bar baz"})
       {:ok, %{my_key: 13, other: "bar baz"}}
-      
+
       iex> Xod.parse! Xod.map(%{x: Xod.number()}), %{x: true}
       ** (Xod.XodError) Expected number, got boolean (in path [:x])
   """
@@ -244,7 +244,7 @@ defmodule Xod do
 
       iex> Xod.parse Xod.literal(10), 10.0
       {:ok, 10.0}
-      
+
       iex> Xod.parse! Xod.literal(10, strict: true), 10.0
       ** (Xod.XodError) Invalid literal value, expected 10 (in path [])
   """
@@ -259,13 +259,41 @@ defmodule Xod do
 
       iex> Xod.parse(Xod.string() |> Xod.default("foo"), nil)
       {:ok, "foo"}
-      
+
       iex> Xod.parse(Xod.string() |> Xod.default("foo"), "bar")
       {:ok, "bar"}
   """
   @doc section: :utils
   @spec default(Xod.Schema.t(), term()) :: Xod.Default.t()
   defdelegate default(schema, default), to: Xod.Default, as: :new
+
+  @doc """
+  Skips error when key is missing in the map
+
+  ## Example
+
+      iex> Xod.parse(Xod.map(%{x: Xod.string() |> Xod.optional()}), %{x: "foo"})
+      {:ok, %{x: "foo"}}
+
+      iex> Xod.parse(Xod.map(%{x: Xod.string() |> Xod.optional()}), %{})
+      {:ok, %{}}
+
+      iex> Xod.parse(Xod.map(%{x: Xod.string() |> Xod.optional()}), %{x: 1})
+      {:error,
+       %Xod.XodError{
+         issues: [
+           [
+             type: :invalid_type,
+             path: [:x],
+             data: [expected: :string, got: :number],
+             message: "Expected string, got number"
+           ]
+         ]
+       }}
+  """
+  @doc section: :utils
+  @spec optional(Xod.Schema.t()) :: Xod.Optional.t()
+  defdelegate optional(schema), to: Xod.Optional, as: :new
 
   @doc """
   Schema that validates value against a list of schemata and succeeds if at
@@ -275,7 +303,7 @@ defmodule Xod do
 
       iex> Xod.parse(Xod.list(Xod.union([Xod.string(), Xod.number()])), ["abc", 4, "t"])
       {:ok, ["abc", 4, "t"]}
-      
+
       iex(5)> Xod.parse(Xod.union([Xod.string(), Xod.number()]), :atom)
       {:error,
        %Xod.XodError{ issues: [
@@ -334,7 +362,7 @@ defmodule Xod do
 
       iex> Xod.parse!(Xod.string() |> Xod.max(4), "12345")
       ** (Xod.XodError) String must contain at most 4 character(s) (in path [])
-      
+
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.max(4), [1, 2, 3, 4, 5])
       ** (Xod.XodError) List must contain at most 4 character(s) (in path [])
   """
@@ -353,7 +381,7 @@ defmodule Xod do
 
       iex> Xod.parse!(Xod.string() |> Xod.min(5), "1234")
       ** (Xod.XodError) String must contain at least 5 character(s) (in path [])
-      
+
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.min(5), [1, 2, 3, 4])
       ** (Xod.XodError) List must contain at least 5 character(s) (in path [])
   """
@@ -372,7 +400,7 @@ defmodule Xod do
 
       iex> Xod.parse!(Xod.string() |> Xod.length(5), "1234")
       ** (Xod.XodError) String must contain exactly 5 character(s) (in path [])
-      
+
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.length(3), [1, 2, 3, 4])
       ** (Xod.XodError) List must contain exactly 3 character(s) (in path [])
   """

@@ -151,7 +151,9 @@ defmodule Xod.Default do
     def parse(%Xod.Default{schema: schema, default: default}, value, path) do
       case value do
         nil ->
-          {:ok, default}
+          # {:ok, default}
+          # NB: pipe default through schema as well
+          X.Schema.parse(schema, default, path)
 
         other ->
           X.Schema.parse(schema, other, path)

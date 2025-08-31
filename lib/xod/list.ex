@@ -90,7 +90,7 @@ defmodule Xod.List do
             [
               type: :too_big,
               path: path,
-              message: "List must contain at most #{schema.max} character(s)",
+              message: "List must contain at most #{schema.max} element(s)",
               data: [
                 max: schema.max
               ]
@@ -99,7 +99,7 @@ defmodule Xod.List do
             [
               type: :too_small,
               path: path,
-              message: "List must contain at least #{schema.min} character(s)",
+              message: "List must contain at least #{schema.min} element(s)",
               data: [
                 min: schema.min
               ]
@@ -108,7 +108,7 @@ defmodule Xod.List do
             [
               type: if(length(value) < schema.length, do: :too_small, else: :too_big),
               path: path,
-              message: "List must contain exactly #{schema.length} character(s)",
+              message: "List must contain exactly #{schema.length} element(s)",
               data: [
                 equal: schema.length
               ]

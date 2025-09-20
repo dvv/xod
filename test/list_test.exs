@@ -9,6 +9,8 @@ defmodule Tests.List do
   test "list coerce" do
     assert X.parse(X.list(X.never()), %{}) == {:ok, []}
 
+    assert X.parse(X.list(Xod.any()), %{"0" => %{"0" => %{x: 1}}}) == {:ok, [[%{x: 1}]]}
+
     assert X.parse(
              X.list(X.never(),
                keys: [

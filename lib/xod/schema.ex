@@ -6,7 +6,7 @@ end
 defmodule Xod.Common do
   @type path() :: [binary() | non_neg_integer()]
   @type result(x) :: {:error, Xod.XodError.t()} | {:ok, x}
-  @type type_atom() :: :map | :list | :tuple | :string | :number | :boolean | nil | :unknown
+  @type type_atom() :: :map | :list | :tuple | :string | :atom | :number | :boolean | nil | :unknown
 
   @doc false
   @spec get_type(term()) :: type_atom()
@@ -38,6 +38,12 @@ defmodule Xod.Common do
       end
     end)
   end
+
+  @doc false
+  # @spec list_from_map(%{term() => term(), ...}) :: [term(), ...]
+  def list_from_map(%{"0" => _} = x), do: Map.values(x) |> Enum.map(&list_from_map/1)
+  def list_from_map(x) when is_map(x), do: x |> Enum.map(fn {k, v} -> {k, list_from_map(v)} end) |> Enum.into(%{})
+  def list_from_map(x), do: x
 
   # coveralls-ignore-start
   defp set_field(field_name, type) do

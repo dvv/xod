@@ -364,7 +364,7 @@ defmodule Xod do
       ** (Xod.XodError) String must contain at most 4 character(s) (in path [])
 
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.max(4), [1, 2, 3, 4, 5])
-      ** (Xod.XodError) List must contain at most 4 character(s) (in path [])
+      ** (Xod.XodError) List must contain at most 4 element(s) (in path [])
   """
   @doc section: :mods
   @spec max(Xod.String.t() | Xod.List.t(), non_neg_integer()) :: Xod.String.t() | Xod.List.t()
@@ -383,7 +383,7 @@ defmodule Xod do
       ** (Xod.XodError) String must contain at least 5 character(s) (in path [])
 
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.min(5), [1, 2, 3, 4])
-      ** (Xod.XodError) List must contain at least 5 character(s) (in path [])
+      ** (Xod.XodError) List must contain at least 5 element(s) (in path [])
   """
   @doc section: :mods
   @spec min(Xod.String.t() | Xod.List.t(), non_neg_integer()) :: Xod.String.t() | Xod.List.t()
@@ -402,7 +402,7 @@ defmodule Xod do
       ** (Xod.XodError) String must contain exactly 5 character(s) (in path [])
 
       iex> Xod.parse!(Xod.list(Xod.number()) |> Xod.length(3), [1, 2, 3, 4])
-      ** (Xod.XodError) List must contain exactly 3 character(s) (in path [])
+      ** (Xod.XodError) List must contain exactly 3 element(s) (in path [])
   """
   @doc section: :mods
   @spec length(Xod.String.t() | Xod.List.t(), non_neg_integer()) :: Xod.String.t() | Xod.List.t()

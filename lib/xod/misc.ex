@@ -36,6 +36,9 @@ defmodule Xod.Coercive do
     def parse(%Xod.Coercive{schema: %Xod.Literal{value: atom} = schema}, value, path) when is_atom(atom) and is_binary(value) do
       Xod.Schema.parse(schema, String.to_atom(value), path)
     end
+    def parse(%Xod.Coercive{schema: %Xod.String{} = schema}, value, path) when not is_binary(value) do
+      Xod.Schema.parse(schema, to_string(value), path)
+    end
     def parse(%Xod.Coercive{schema: %Xod.List{} = schema}, value, path) when is_map(value) do
       Xod.Schema.parse(schema, Map.values(value), path)
     end

@@ -73,7 +73,7 @@ defmodule Xod.List do
 
     @impl true
     def parse(%X.List{coerce: true} = schema, %{"0" => _} = map, path) do
-      parse(schema, Map.values(map), path)
+      parse(schema, X.Common.list_from_map(map), path)
     end
 
     @impl true

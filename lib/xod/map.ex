@@ -9,17 +9,25 @@ defmodule Xod.Map do
           foreign_keys: foreign_keys(),
           coerce: boolean(),
           key_coerce: boolean(),
-          struct: module() | struct()
+          map_keys: map(),
+          struct: module() | struct(),
+          min: non_neg_integer(),
+          max: non_neg_integer(),
+          length: non_neg_integer()
         }
 
   @enforce_keys [:keyval]
-  defstruct [:keyval, :struct, foreign_keys: :strip, coerce: true, key_coerce: false]
+  defstruct [:keyval, :struct, :min, :max, :length, foreign_keys: :strip, coerce: true, key_coerce: false, map_keys: %{}]
 
   @spec new(%{optional(term()) => X.Schema.t()},
           foreign_keys: foreign_keys(),
           coerce: boolean(),
           key_coerce: boolean(),
-          struct: module() | struct()
+          map_keys: map(),
+          struct: module() | struct(),
+          min: non_neg_integer(),
+          max: non_neg_integer(),
+          length: non_neg_integer()
         ) ::
           %__MODULE__{}
   def new(map, opts \\ []) when is_map(map) do
@@ -68,15 +76,17 @@ defmodule Xod.Map do
       get = if(schema.key_coerce, do: &get_key/2, else: &Map.get/2)
       drop = if(schema.key_coerce, do: &del_key/2, else: &Map.drop(&1, [&2]))
 
+      map_keys = schema.map_keys
       {parsed, mapLeft, errors} =
         Enum.reduce(
           schema.keyval,
           {%{}, map, []},
           fn {key, schema}, {parsed, mapLeft, errors} ->
-            value = get.(mapLeft, key)
+            skey = Map.get(map_keys, key, key)
+            value = get.(mapLeft, skey)
             res = case schema do
               %Xod.Optional{schema: schema} ->
-                case has?.(mapLeft, key) do
+                case has?.(mapLeft, skey) do
                   true -> X.Schema.parse(schema, value, List.insert_at(path, -1, key))
                   false -> :skip
                 end
@@ -85,10 +95,10 @@ defmodule Xod.Map do
 
             case res do
               {:error, err} ->
-                {parsed, drop.(mapLeft, key), List.insert_at(errors, -1, err)}
+                {parsed, drop.(mapLeft, skey), List.insert_at(errors, -1, err)}
 
               {:ok, val} ->
-                {Map.put(parsed, key, val), drop.(mapLeft, key), errors}
+                {Map.put(parsed, key, val), drop.(mapLeft, skey), errors}
 
               :skip ->
                 {parsed, mapLeft, errors}
@@ -118,6 +128,8 @@ defmodule Xod.Map do
         end
 
       parsed = Map.merge(parsed, extraParsed)
+      #  |> Enum.map(fn {k, v} -> {schema.map_keys[k] || k, v} end)
+      #  |> Enum.into(%{})
       errors = errors ++ extraErrors
 
       parsed =
@@ -126,7 +138,7 @@ defmodule Xod.Map do
           else: parsed
         )
 
-      case {errors, schema.foreign_keys} do
+      result = case {errors, schema.foreign_keys} do
         {[], :passthrough} ->
           {:ok, Map.merge(parsed, mapLeft)}
 
@@ -155,6 +167,47 @@ defmodule Xod.Map do
 
         {errors, _} ->
           {:error, %X.XodError{issues: Enum.map(errors, & &1.issues) |> :lists.append()}}
+      end
+
+      case result do
+        {:ok, parsed} ->
+          length_errors =
+            [
+              schema.max && map_size(parsed) > schema.max &&
+                [
+                  type: :too_big,
+                  path: path,
+                  message: "Map must contain at most #{schema.max} key(s)",
+                  data: [
+                    max: schema.max
+                  ]
+                ],
+              schema.min && map_size(parsed) < schema.min &&
+                [
+                  type: :too_small,
+                  path: path,
+                  message: "Map must contain at least #{schema.min} key(s)",
+                  data: [
+                    min: schema.min
+                  ]
+                ],
+              schema.length && map_size(parsed) !== schema.length &&
+                [
+                  type: if(map_size(parsed) < schema.length, do: :too_small, else: :too_big),
+                  path: path,
+                  message: "Map must contain exactly #{schema.length} key(s)",
+                  data: [
+                    equal: schema.length
+                  ]
+                ]
+            ]
+            |> Enum.filter(&Function.identity/1)
+          if length(length_errors) > 0 do
+            {:error, %X.XodError{issues: length_errors}}
+          else
+            {:ok, parsed}
+          end
+        {:error, error} -> {:error, error}
       end
     end
   end

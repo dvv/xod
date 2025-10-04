@@ -77,7 +77,7 @@ defmodule Xod.List do
     end
 
     @impl true
-    def parse(_, not_a_list, path) when not is_list(not_a_list) and not is_map(not_a_list) do
+    def parse(_, not_a_list, path) when not (is_list(not_a_list) or is_non_struct_map(not_a_list)) do
       {:error, X.XodError.invalid_type(:list, X.Common.get_type(not_a_list), path)}
     end
 

@@ -8,10 +8,11 @@ defmodule Xod.Number do
           le: number(),
           ge: number(),
           int: boolean(),
-          step: number()
+          step: number(),
+          coerce: boolean()
         }
 
-  defstruct [:lt, :gt, :le, :ge, :int, :step]
+  defstruct [:lt, :gt, :le, :ge, :int, :step, coerce: true]
 
   @spec new(
           lt: number(),
@@ -19,7 +20,8 @@ defmodule Xod.Number do
           le: number(),
           ge: number(),
           int: boolean(),
-          step: number()
+          step: number(),
+          coerce: boolean()
         ) :: t()
   def new(options \\ []) do
     struct(__MODULE__, options)
@@ -47,6 +49,24 @@ defmodule Xod.Number do
   def nonpositive(schema), do: le(schema, 0)
 
   defimpl X.Schema do
+
+    @impl true
+    def parse(%Xod.Number{coerce: true, int: true} = schema, value, path) when is_binary(value) do
+      value = case Integer.parse(value) do
+        {value, ""} -> value
+        _ -> value
+      end
+      Xod.Schema.parse(%{schema | coerce: false}, value, path)
+    end
+    @impl true
+    def parse(%Xod.Number{coerce: true} = schema, value, path) when is_binary(value) do
+      value = case Float.parse(value) do
+        {value, ""} -> value
+        _ -> value
+      end
+      Xod.Schema.parse(%{schema | coerce: false}, value, path)
+    end
+
     @impl true
     def parse(_, not_number, path) when not is_number(not_number) do
       {:error, X.XodError.invalid_type(:number, X.Common.get_type(not_number), path)}

@@ -12,6 +12,7 @@ defmodule Xod.Coercive do
   defimpl Xod.Schema do
 
     @impl true
+"""
     def parse(%Xod.Coercive{schema: %Xod.Number{int: true} = schema}, value, path) when is_binary(value) do
       value = case Integer.parse(value) do
         {value, ""} -> value
@@ -36,12 +37,13 @@ defmodule Xod.Coercive do
     def parse(%Xod.Coercive{schema: %Xod.Literal{value: atom} = schema}, value, path) when is_atom(atom) and is_binary(value) do
       Xod.Schema.parse(schema, String.to_atom(value), path)
     end
-    def parse(%Xod.Coercive{schema: %Xod.String{} = schema}, value, path) when not is_binary(value) do
-      Xod.Schema.parse(schema, to_string(value), path)
-    end
-    def parse(%Xod.Coercive{schema: %Xod.List{} = schema}, value, path) when is_map(value) do
-      Xod.Schema.parse(schema, Map.values(value), path)
-    end
+"""
+#    def parse(%Xod.Coercive{schema: %Xod.String{} = schema}, value, path) when not is_binary(value) do
+#      Xod.Schema.parse(schema, to_string(value), path)
+#    end
+#    def parse(%Xod.Coercive{schema: %Xod.List{} = schema}, value, path) when is_map(value) do
+#      Xod.Schema.parse(schema, Map.values(value), path)
+#    end
     def parse(%Xod.Coercive{schema: schema}, value, path) do
       Xod.Schema.parse(schema, value, path)
     end
@@ -51,7 +53,7 @@ end
 defmodule Xod.DateTime do
   @type t() :: %__MODULE__{coerce: boolean()}
 
-  defstruct [:coerce]
+  defstruct [coerce: true]
 
   @spec new(coerce: boolean()) :: t()
   def new(opts \\ []), do: struct(__MODULE__, opts)
@@ -74,7 +76,7 @@ end
 defmodule Xod.Date do
   @type t() :: %__MODULE__{coerce: boolean()}
 
-  defstruct [:coerce]
+  defstruct [coerce: true]
 
   @spec new(coerce: boolean()) :: t()
   def new(opts \\ []), do: struct(__MODULE__, opts)
@@ -96,7 +98,7 @@ end
 defmodule Xod.Time do
   @type t() :: %__MODULE__{coerce: boolean()}
 
-  defstruct [:coerce]
+  defstruct [coerce: true]
 
   @spec new(coerce: boolean()) :: t()
   def new(opts \\ []), do: struct(__MODULE__, opts)

@@ -52,16 +52,20 @@ defmodule Xod.Transform do
 end
 
 defmodule Xod.Literal do
-  @type t() :: %__MODULE__{value: term(), strict: boolean()}
+  @type t() :: %__MODULE__{value: term(), strict: boolean(), coerce: boolean()}
 
   @enforce_keys [:value]
-  defstruct [:value, strict: false]
+  defstruct [:value, strict: false, coerce: true]
 
-  @spec new(term(), strict: boolean()) :: t()
+  @spec new(term(), strict: boolean(), coerce: boolean()) :: t()
   def new(value, options \\ []), do: struct(%__MODULE__{value: value}, options)
 
   defimpl Xod.Schema do
     @impl true
+    def parse(%Xod.Literal{value: nil, coerce: true}, "null", _path), do: {:ok, nil}
+    def parse(%Xod.Literal{value: atom, coerce: true} = schema, value, path) when is_atom(atom) and is_binary(value) do
+      Xod.Schema.parse(%{schema | coerce: false}, String.to_atom(value), path)
+    end
     def parse(schema, value, path) do
       eq = if schema.strict, do: &===/2, else: &==/2
 

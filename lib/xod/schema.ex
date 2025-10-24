@@ -45,6 +45,9 @@ defmodule Xod.Common do
   def list_from_map(x) when is_map(x), do: x |> Enum.map(fn {k, v} -> {k, list_from_map(v)} end) |> Enum.into(%{})
   def list_from_map(x), do: x
 
+  @doc false
+  def list_from_binary(binary, separator \\ ",") when is_binary(binary), do: String.split(binary, separator, trim: true)
+
   # coveralls-ignore-start
   defp set_field(field_name, type) do
     spec_call = {field_name, [], [quote(do: t()), type]}

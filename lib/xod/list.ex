@@ -8,18 +8,20 @@ defmodule Xod.List do
           min: non_neg_integer(),
           max: non_neg_integer(),
           length: non_neg_integer(),
-          coerce: boolean()
+          coerce: boolean(),
+          separator: binary() | [binary(), ...] | Regex.t()
         }
 
   @enforce_keys [:element]
-  defstruct [:element, :keys, :min, :max, :length, coerce: true]
+  defstruct [:element, :keys, :min, :max, :length, coerce: true, separator: ","]
 
   @type args() :: [
           keys: list(),
           min: non_neg_integer(),
           max: non_neg_integer(),
           length: non_neg_integer(),
-          coerce: boolean()
+          coerce: boolean(),
+          separator: binary() | [binary(), ...] | Regex.t()
         ]
 
   @spec new(X.Schema.t(), args()) :: t()
@@ -71,17 +73,17 @@ defmodule Xod.List do
       {:error, X.XodError.invalid_type(:list, :map, path)}
     end
 
-    @impl true
     def parse(%X.List{coerce: true} = schema, %{"0" => _} = map, path) do
       parse(schema, X.Common.list_from_map(map), path)
     end
+    def parse(%X.List{coerce: true, separator: separator} = schema, binary, path) when is_binary(binary) do
+      parse(%{schema | coerce: false}, X.Common.list_from_binary(binary, separator), path)
+    end
 
-    @impl true
     def parse(_, not_a_list, path) when not (is_list(not_a_list) or is_non_struct_map(not_a_list)) do
       {:error, X.XodError.invalid_type(:list, X.Common.get_type(not_a_list), path)}
     end
 
-    @impl true
     @spec parse(X.List.t(), list(), X.Common.path()) :: X.Common.result(list())
     def parse(schema, value, path) do
       length_errors =

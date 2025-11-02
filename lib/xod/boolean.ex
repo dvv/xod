@@ -18,12 +18,12 @@ defmodule Xod.Boolean do
       Xod.Schema.parse(%{schema | coerce: false}, value, path)
     end
 
-    def parse(%Xod.Boolean{coerce: false}, value, path) when not is_boolean(value) do
-      {:error, Xod.XodError.invalid_type(:boolean, Xod.Common.get_type(value), path)}
+    def parse(_, value, _) when is_boolean(value) do
+      {:ok, value}
     end
 
-    def parse(_, value, _) do
-      if value, do: {:ok, true}, else: {:ok, false}
+    def parse(_, value, path) do
+      {:error, Xod.XodError.invalid_type(:boolean, Xod.Common.get_type(value), path)}
     end
   end
 end

@@ -63,7 +63,7 @@ defmodule Xod.Literal do
   defimpl Xod.Schema do
     @impl true
     def parse(%Xod.Literal{value: nil, coerce: true}, "null", _path), do: {:ok, nil}
-    def parse(%Xod.Literal{value: atom, coerce: true} = schema, binary, path) when is_atom(atom) and is_binary(binary) do
+    def parse(%Xod.Literal{value: atom, coerce: true} = schema, binary, path) when is_atom(atom) and not is_nil(atom) and is_binary(binary) do
       Xod.Schema.parse(%{schema | coerce: false}, String.to_atom(binary), path)
     end
     def parse(%Xod.Literal{value: binary, coerce: true} = schema, not_binary, path) when is_binary(binary) and (is_number(not_binary) or is_atom(not_binary)) do

@@ -5,6 +5,7 @@ defmodule Xod.Optional do
   defstruct [:schema]
 
   @spec new(Xod.Schema.t()) :: t()
+  def new(%Xod.Default{} = schema), do: schema
   def new(schema) when is_struct(schema) do
     %__MODULE__{schema: schema}
   end

@@ -80,15 +80,16 @@ defmodule Xod.List do
       parse(%{schema | coerce: false}, X.Common.list_from_binary(binary, separator), path)
     end
 
-    def parse(_, not_a_list, path) when not (is_list(not_a_list) or is_non_struct_map(not_a_list)) do
+    def parse(_, not_a_list, path) when not is_list(not_a_list) do
       {:error, X.XodError.invalid_type(:list, X.Common.get_type(not_a_list), path)}
     end
 
     @spec parse(X.List.t(), list(), X.Common.path()) :: X.Common.result(list())
     def parse(schema, value, path) do
+      size = Enum.count(value)
       length_errors =
         [
-          schema.max && length(value) > schema.max &&
+          schema.max && size > schema.max &&
             [
               type: :too_big,
               path: path,
@@ -97,7 +98,7 @@ defmodule Xod.List do
                 max: schema.max
               ]
             ],
-          schema.min && length(value) < schema.min &&
+          schema.min && size < schema.min &&
             [
               type: :too_small,
               path: path,
@@ -106,9 +107,9 @@ defmodule Xod.List do
                 min: schema.min
               ]
             ],
-          schema.length && length(value) !== schema.length &&
+          schema.length && size !== schema.length &&
             [
-              type: if(length(value) < schema.length, do: :too_small, else: :too_big),
+              type: if(size < schema.length, do: :too_small, else: :too_big),
               path: path,
               message: "List must contain exactly #{schema.length} element(s)",
               data: [

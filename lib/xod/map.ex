@@ -1,6 +1,5 @@
 defmodule Xod.Map do
   alias Xod, as: X
-  require X.Common
 
   @type foreign_keys() :: :strip | :strict | :passthrough | X.Schema.t()
 

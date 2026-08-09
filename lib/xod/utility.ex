@@ -28,6 +28,24 @@ defmodule Xod.Never do
   end
 end
 
+defmodule Xod.Value do
+  @type t() :: %__MODULE__{}
+
+  defstruct [:skip, value: nil]
+
+  @spec new(term()) :: t()
+  def new(value), do: %__MODULE__{value: value}
+
+  @spec skip() :: t()
+  def skip(), do: %__MODULE__{skip: true}
+
+  defimpl Xod.Schema do
+    @impl true
+    def parse(%Xod.Value{skip: true}, _value, _path), do: :skip
+    def parse(%Xod.Value{value: value}, _value, _path), do: {:ok, value}
+  end
+end
+
 defmodule Xod.Transform do
   @type t() :: %__MODULE__{schema: Xod.Schema.t(), closure: (term() -> term())}
 

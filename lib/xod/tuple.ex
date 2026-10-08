@@ -1,5 +1,5 @@
 defmodule Xod.Tuple do
-  @type t() :: %__MODULE__{values: tuple()}
+  @type t() :: %__MODULE__{values: tuple(), coerce: boolean()}
 
   @enforce_keys [:values]
   defstruct [:values, coerce: true]

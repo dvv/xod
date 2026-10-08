@@ -7,17 +7,19 @@ defmodule Xod.String do
           max: non_neg_integer(),
           min: non_neg_integer(),
           length: non_neg_integer(),
-          regex: Regex.t()
+          regex: Regex.t(),
+          coerce: boolean()
         }
 
-  defstruct [:max, :min, :length, :regex, validate: true]
+  defstruct [:max, :min, :length, :regex, validate: true, coerce: true]
 
   @type args() :: [
           validate: boolean(),
           max: non_neg_integer(),
           min: non_neg_integer(),
           length: non_neg_integer(),
-          regex: Regex.t()
+          regex: Regex.t(),
+          coerce: boolean()
         ]
 
   @spec new(args()) :: t()
@@ -38,6 +40,9 @@ defimpl Xod.Schema, for: Xod.String do
   alias Xod, as: X
 
   @impl true
+  def parse(%Xod.String{coerce: true} = schema, value, path) when is_atom(value) and not is_nil(value) do
+    Xod.Schema.parse(%{schema | coerce: false}, to_string(value), path)
+  end
   def parse(_, not_a_string, path) when not is_binary(not_a_string) do
     {:error, X.XodError.invalid_type(:string, X.Common.get_type(not_a_string), path)}
   end

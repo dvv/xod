@@ -138,6 +138,9 @@ defmodule Xod.Union do
 
             {:ok, value} ->
               throw(value)
+
+            :skip ->
+              throw(:skip)
           end
         end)
       catch

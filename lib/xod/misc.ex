@@ -22,24 +22,65 @@ defmodule Xod.DateTime do
 end
 
 defmodule Xod.Date do
-  @type t() :: %__MODULE__{coerce: boolean()}
+  @type t() :: %__MODULE__{
+    lt: Date.t(),
+    gt: Date.t(),
+    le: Date.t(),
+    ge: Date.t(),
+    coerce: boolean()
+  }
 
-  defstruct [coerce: true]
+  defstruct [:lt, :gt, :le, :ge, coerce: true]
 
-  @spec new(coerce: boolean()) :: t()
+  @spec new(
+    lt: Date.t(),
+    gt: Date.t(),
+    le: Date.t(),
+    ge: Date.t(),
+    coerce: boolean()
+  ) :: t()
   def new(opts \\ []), do: struct(__MODULE__, opts)
 
   defimpl Xod.Schema do
 
     @impl true
-    def parse(_, value, _) when is_struct(value, Date), do: {:ok, value}
-    def parse(%Xod.Date{coerce: true}, value, path) when is_binary(value) do
+    def parse(schema, value, path) when is_struct(value, Date), do: check_limits(schema, value, path)
+    def parse(%Xod.Date{coerce: true} = schema, value, path) when is_binary(value) do
       case Date.from_iso8601(value) do
-        {:ok, value} -> {:ok, value}
+        {:ok, value} -> check_limits(schema, value, path)
         {:error, _reason} -> {:error, Xod.XodError.invalid_type(:date, Xod.Common.get_type(value), path)}
       end
     end
     def parse(_, value, path), do: {:error, Xod.XodError.invalid_type(:date, Xod.Common.get_type(value), path)}
+
+    defp check_limits(schema, value, path) do
+      issues = Enum.reduce([:lt, :gt, :le, :ge], [], fn
+        :lt, acc ->
+          case schema.lt === nil or Date.compare(value, schema.lt) == :lt do
+            true -> acc
+            false -> acc ++ [[type: :too_big, path: path, message: "Date must be smaller than #{schema.lt}", data: [max: schema.lt, exclusive: true]]]
+          end
+        :gt, acc ->
+          case schema.gt === nil or Date.compare(value, schema.gt) == :gt do
+            true -> acc
+            false -> acc ++ [[type: :too_small, path: path, message: "Date must be greater than #{schema.gt}", data: [min: schema.gt, exclusive: true]]]
+          end
+        :le, acc ->
+          case schema.le === nil or Date.compare(value, schema.le) in [:lt, :eq] do
+            true -> acc
+            false -> acc ++ [[type: :too_big, path: path, message: "Date must be smaller than or equal to #{schema.le}", data: [max: schema.le, exclusive: false]]]
+          end
+        :ge, acc ->
+          case schema.ge === nil or Date.compare(value, schema.ge) in [:gt, :eq] do
+            true -> acc
+            false -> acc ++ [[type: :too_small, path: path, message: "Date must be greater than or equal to #{schema.ge}", data: [min: schema.ge, exclusive: false]]]
+          end
+      end)
+      case issues do
+        [] -> {:ok, value}
+        issues -> {:error, %Xod.XodError{issues: issues}}
+      end
+    end
   end
 end
 
